@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "ask-sdk-core": "^2.14.0",
-    "ask-sdk-model": "^1.29.0",
-    "axios": "^1.6.0"
+    "ask-sdk-model": "^1.29.0"
   }
 }

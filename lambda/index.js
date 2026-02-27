@@ -1,5 +1,5 @@
 const Alexa = require('ask-sdk-core');
-const axios = require('axios');
+const https = require('https');
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL || '';
 
@@ -26,7 +26,7 @@ async function enviarWebhook(payload) {
     return;
   }
   try {
-    await axios.post(WEBHOOK_URL, payload, { timeout: 5000 });
+    await httpJson('POST', WEBHOOK_URL, payload, 5000);
   } catch (error) {
     console.error('Error enviando webhook:', error.message);
   }
@@ -43,6 +43,62 @@ function buildWebhookPayload(categoria, accion, extra = {}) {
     ...getTimestamp(),
     ...extra
   };
+}
+
+function httpJson(method, urlStr, body, timeoutMs = 5000) {
+  return new Promise((resolve, reject) => {
+    let url;
+    try {
+      url = new URL(urlStr);
+    } catch {
+      reject(new Error('URL inválida'));
+      return;
+    }
+
+    const data = body ? JSON.stringify(body) : null;
+    const req = https.request(
+      {
+        method,
+        protocol: url.protocol,
+        hostname: url.hostname,
+        port: url.port || 443,
+        path: `${url.pathname}${url.search}`,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
+        },
+        timeout: timeoutMs
+      },
+      (res) => {
+        let raw = '';
+        res.on('data', (chunk) => {
+          raw += chunk;
+        });
+        res.on('end', () => {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            reject(new Error(`HTTP ${res.statusCode}`));
+            return;
+          }
+          if (!raw) {
+            resolve({});
+            return;
+          }
+          try {
+            resolve(JSON.parse(raw));
+          } catch {
+            reject(new Error('Respuesta JSON inválida'));
+          }
+        });
+      }
+    );
+
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy(new Error('Timeout'));
+    });
+    if (data) req.write(data);
+    req.end();
+  });
 }
 
 // ─────────────────────────────────────────────
@@ -226,8 +282,7 @@ const TerminarEntrenoIntentHandler = {
 // ─────────────────────────────────────────────
 
 async function getCotizacion(tipo) {
-  const res = await axios.get(`https://dolarapi.com/v1/dolares/${tipo}`, { timeout: 5000 });
-  return res.data; // { compra, venta, fechaActualizacion }
+  return httpJson('GET', `https://dolarapi.com/v1/dolares/${tipo}`, null, 5000);
 }
 
 function formatPesos(numero) {
