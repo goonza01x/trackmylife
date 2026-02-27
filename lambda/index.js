@@ -55,7 +55,7 @@ const LaunchRequestHandler = {
   },
   handle(handlerInput) {
     return handlerInput.responseBuilder
-      .speak('Hola, tracker activo. ¿Qué querés registrar?')
+      .speak('HABITOS GONZA ONLINE. ¿Qué querés registrar?')
       .reprompt('¿Qué querés registrar?')
       .getResponse();
   }
