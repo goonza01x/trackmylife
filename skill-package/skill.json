@@ -25,6 +25,13 @@
         }
       }
     },
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "usesPersonalInfo": false,
+      "isChildDirected": false,
+      "isExportCompliant": true,
+      "containsAds": false
+    },
     "manifestVersion": "1.0"
   }
 }
