@@ -4,9 +4,9 @@ Repositorio de la skill de Alexa.
 
 ## Estructura
 
-- `skill.json`: manifiesto de la skill
+- `skill-package/skill.json`: manifiesto de la skill
+- `skill-package/interactionModels/`: modelo de interacción
 - `lambda/`: código backend de la skill
-- `interactionModels/`: modelo de interacción
 
 ## Configuración local
 
@@ -14,4 +14,3 @@ Repositorio de la skill de Alexa.
 2. Definir `WEBHOOK_URL` apuntando a tu dashboard.
 3. Instalar dependencias en `lambda/`:
    - `cd lambda && npm install`
-
