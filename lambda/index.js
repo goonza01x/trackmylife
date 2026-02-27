@@ -412,6 +412,23 @@ const HelpIntentHandler = {
   }
 };
 
+const FallbackIntentHandler = {
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent'
+    );
+  },
+  handle(handlerInput) {
+    const speakOutput =
+      'No entendí ese comando. Podés decir: me voy a dormir, me desperté, o gasté 200 pesos.';
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt('Probá diciendo: me voy a dormir.')
+      .getResponse();
+  }
+};
+
 const CancelAndStopIntentHandler = {
   canHandle(handlerInput) {
     return (
@@ -479,6 +496,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     RegistrarIngresoIntentHandler,
     // Built-in
     HelpIntentHandler,
+    FallbackIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler
   )
