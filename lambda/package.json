@@ -1,0 +1,14 @@
+{
+  "name": "habit-tracker-alexa-skill",
+  "version": "1.0.0",
+  "description": "Alexa Skill para trackear hábitos diarios",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "ask-sdk-core": "^2.14.0",
+    "ask-sdk-model": "^1.89.0",
+    "axios": "^1.6.0"
+  }
+}
