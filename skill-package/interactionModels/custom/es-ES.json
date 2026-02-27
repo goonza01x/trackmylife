@@ -215,13 +215,12 @@
             }
           ],
           "samples": [
-            "gasté {monto} {moneda} en {descripcion}",
-            "gaste {monto} {moneda} en {descripcion}",
-            "gasté {monto} pesos en {descripcion}",
-            "gasté {monto} dólares en {descripcion}",
+            "gasté {monto} {moneda}",
+            "gaste {monto} {moneda}",
+            "gasté {monto} pesos",
+            "gasté {monto} dólares",
             "compré algo por {monto} {moneda}",
-            "compré {descripcion} por {monto} {moneda}",
-            "registrar gasto de {monto} {moneda} en {descripcion}",
+            "registrar gasto de {monto} {moneda}",
             "anotar gasto de {monto} {moneda}"
           ]
         },
@@ -248,10 +247,10 @@
             "cerré un cliente por {monto} {moneda}",
             "conseguí un proyecto por {monto} {moneda}",
             "ingresaron {monto} {moneda}",
-            "cobré {monto} {moneda} por {descripcion}",
+            "cobré {monto} {moneda}",
             "registrar ingreso de {monto} {moneda}",
-            "anotar ingreso de {monto} {moneda} por {descripcion}",
-            "me pagaron {monto} {moneda} por {descripcion}"
+            "anotar ingreso de {monto} {moneda}",
+            "me pagaron {monto} {moneda}"
           ]
         }
       ],
