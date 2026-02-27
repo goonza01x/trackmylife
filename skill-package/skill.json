@@ -5,9 +5,9 @@
         "es-ES": {
           "summary": "Trackeá tus hábitos diarios con tu voz.",
           "examplePhrases": [
-            "Alexa, abre mis habitos",
-            "Alexa, dile a mis habitos que me voy a dormir",
-            "Alexa, dile a mis habitos que gaste 200 pesos"
+            "Alexa, abre habitos gonza",
+            "Alexa, dile a habitos gonza que me voy a dormir",
+            "Alexa, dile a habitos gonza que gaste 200 pesos"
           ],
           "name": "Mis Hábitos",
           "description": "Skill para registrar y consultar tus hábitos diarios. Podés registrar hábitos como ejercicio, lectura, meditación y más, y consultar tu progreso."
@@ -15,9 +15,9 @@
         "es-US": {
           "summary": "Trackea tus habitos diarios con tu voz.",
           "examplePhrases": [
-            "Alexa, abre mis habitos",
-            "Alexa, dile a mis habitos que me voy a dormir",
-            "Alexa, dile a mis habitos que gaste 200 pesos"
+            "Alexa, abre habitos gonza",
+            "Alexa, dile a habitos gonza que me voy a dormir",
+            "Alexa, dile a habitos gonza que gaste 200 pesos"
           ],
           "name": "Mis Habitos",
           "description": "Skill para registrar y consultar tus habitos diarios. Podes registrar habitos como ejercicio, lectura y sueno, y consultar tu progreso."
@@ -25,16 +25,16 @@
         "es-MX": {
           "summary": "Trackea tus habitos diarios con tu voz.",
           "examplePhrases": [
-            "Alexa, abre mis habitos",
-            "Alexa, dile a mis habitos que me voy a dormir",
-            "Alexa, dile a mis habitos que gaste 200 pesos"
+            "Alexa, abre habitos gonza",
+            "Alexa, dile a habitos gonza que me voy a dormir",
+            "Alexa, dile a habitos gonza que gaste 200 pesos"
           ],
           "name": "Mis Habitos",
           "description": "Skill para registrar y consultar tus habitos diarios. Puedes registrar habitos como ejercicio, lectura y sueno, y consultar tu progreso."
         }
       },
       "isAvailableWorldwide": false,
-      "testingInstructions": "Decí: Alexa, abrir mis hábitos",
+      "testingInstructions": "Decí: Alexa, abre habitos gonza",
       "category": "HEALTH_TRACKERS_AND_REMINDERS",
       "distributionCountries": ["ES", "US", "MX"]
     },

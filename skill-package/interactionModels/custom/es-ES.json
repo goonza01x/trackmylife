@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "mis habitos",
+      "invocationName": "habitos gonza",
       "intents": [
         {
           "name": "AMAZON.CancelIntent",
