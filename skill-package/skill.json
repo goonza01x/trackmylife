@@ -5,9 +5,9 @@
         "es-ES": {
           "summary": "Trackeá tus hábitos diarios con tu voz.",
           "examplePhrases": [
-            "Alexa, abrir mis hábitos",
-            "Alexa, decirle a mis hábitos que registré ejercicio",
-            "Alexa, pedirle a mis hábitos el resumen de hoy"
+            "Alexa, abre mis habitos",
+            "Alexa, dile a mis habitos que me voy a dormir",
+            "Alexa, dile a mis habitos que gaste 200 pesos"
           ],
           "name": "Mis Hábitos",
           "description": "Skill para registrar y consultar tus hábitos diarios. Podés registrar hábitos como ejercicio, lectura, meditación y más, y consultar tu progreso."
@@ -21,12 +21,22 @@
           ],
           "name": "Mis Habitos",
           "description": "Skill para registrar y consultar tus habitos diarios. Podes registrar habitos como ejercicio, lectura y sueno, y consultar tu progreso."
+        },
+        "es-MX": {
+          "summary": "Trackea tus habitos diarios con tu voz.",
+          "examplePhrases": [
+            "Alexa, abre mis habitos",
+            "Alexa, dile a mis habitos que me voy a dormir",
+            "Alexa, dile a mis habitos que gaste 200 pesos"
+          ],
+          "name": "Mis Habitos",
+          "description": "Skill para registrar y consultar tus habitos diarios. Puedes registrar habitos como ejercicio, lectura y sueno, y consultar tu progreso."
         }
       },
       "isAvailableWorldwide": false,
       "testingInstructions": "Decí: Alexa, abrir mis hábitos",
       "category": "HEALTH_TRACKERS_AND_REMINDERS",
-      "distributionCountries": ["ES", "US"]
+      "distributionCountries": ["ES", "US", "MX"]
     },
     "apis": {
       "custom": {
