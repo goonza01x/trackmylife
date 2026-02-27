@@ -1,0 +1,270 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "mis habitos",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+
+        {
+          "name": "DespertarseIntent",
+          "slots": [],
+          "samples": [
+            "recién me desperté",
+            "me desperté",
+            "ya me desperté",
+            "me levanté",
+            "recién me levanté",
+            "acabo de despertarme",
+            "buen día me desperté"
+          ]
+        },
+
+        {
+          "name": "DormirseIntent",
+          "slots": [],
+          "samples": [
+            "me voy a dormir",
+            "voy a dormir",
+            "me voy a la cama",
+            "buenas noches me voy a dormir",
+            "ya me duermo",
+            "me duermo"
+          ]
+        },
+
+        {
+          "name": "IniciarLecturaIntent",
+          "slots": [],
+          "samples": [
+            "me voy a poner a leer",
+            "voy a leer",
+            "empiezo a leer",
+            "voy a ponerme a leer",
+            "inicio de lectura",
+            "empecé a leer",
+            "me puse a leer"
+          ]
+        },
+
+        {
+          "name": "TerminarLecturaIntent",
+          "slots": [],
+          "samples": [
+            "dejé de leer",
+            "voy a dejar de leer",
+            "terminé de leer",
+            "paré de leer",
+            "fin de lectura",
+            "deje de leer"
+          ]
+        },
+
+        {
+          "name": "IniciarTrabajoIntent",
+          "slots": [],
+          "samples": [
+            "estoy trabajando",
+            "empiezo a trabajar",
+            "me pongo a trabajar",
+            "inicio de trabajo",
+            "empecé a trabajar",
+            "arranco a trabajar",
+            "voy a trabajar",
+            "me voy a poner a trabajar"
+          ]
+        },
+
+        {
+          "name": "PausarTrabajoIntent",
+          "slots": [],
+          "samples": [
+            "me tomé un descanso",
+            "me tomo un descanso",
+            "me tomo un descanso del trabajo",
+            "me tomé un descanso del trabajo",
+            "voy a descansar",
+            "pausa de trabajo",
+            "pausa laboral",
+            "corto con el trabajo un momento",
+            "me descanso"
+          ]
+        },
+
+        {
+          "name": "ReanudarTrabajoIntent",
+          "slots": [],
+          "samples": [
+            "volví a trabajar",
+            "vuelvo a trabajar",
+            "retomo el trabajo",
+            "sigo trabajando",
+            "fin del descanso",
+            "de vuelta al trabajo",
+            "reanudo el trabajo"
+          ]
+        },
+
+        {
+          "name": "IniciarEntrenoIntent",
+          "slots": [],
+          "samples": [
+            "me voy a entrenar",
+            "voy a entrenar",
+            "empiezo a entrenar",
+            "me voy al gym",
+            "voy al gym",
+            "inicio de entrenamiento",
+            "me voy a hacer ejercicio",
+            "voy a hacer ejercicio",
+            "arranco el entreno"
+          ]
+        },
+
+        {
+          "name": "TerminarEntrenoIntent",
+          "slots": [],
+          "samples": [
+            "volví de entrenar",
+            "termine de entrenar",
+            "terminé de entrenar",
+            "fin del entrenamiento",
+            "volví del gym",
+            "llegué del gym",
+            "terminé el entreno",
+            "terminé de hacer ejercicio"
+          ]
+        },
+
+        {
+          "name": "ConsultarDolarOficialIntent",
+          "slots": [],
+          "samples": [
+            "a cuánto está el dólar",
+            "a cuanto esta el dolar",
+            "cuál es la cotización del dólar",
+            "cómo está el dólar",
+            "el dólar a cuánto está",
+            "cuánto vale el dólar",
+            "precio del dólar",
+            "dólar oficial"
+          ]
+        },
+
+        {
+          "name": "ConsultarDolarCriptoIntent",
+          "slots": [],
+          "samples": [
+            "a cuánto está el dólar cripto",
+            "a cuanto esta el dolar cripto",
+            "cuál es la cotización del dólar cripto",
+            "cómo está el dólar cripto",
+            "el dólar cripto a cuánto está",
+            "cuánto vale el dólar cripto",
+            "precio del dólar cripto",
+            "dólar cripto"
+          ]
+        },
+
+        {
+          "name": "ConvertirDolaresIntent",
+          "slots": [
+            {
+              "name": "monto",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "cuánto son {monto} dólares",
+            "cuanto son {monto} dolares",
+            "a cuánto equivalen {monto} dólares",
+            "{monto} dólares en pesos",
+            "convertir {monto} dólares",
+            "cuántos pesos son {monto} dólares"
+          ]
+        },
+
+        {
+          "name": "RegistrarGastoIntent",
+          "slots": [
+            {
+              "name": "monto",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "moneda",
+              "type": "TIPO_MONEDA"
+            },
+            {
+              "name": "descripcion",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "gasté {monto} {moneda}",
+            "gaste {monto} {moneda}",
+            "gasté {monto} pesos",
+            "gasté {monto} dólares",
+            "compré algo por {monto} {moneda}",
+            "registrar gasto de {monto} {moneda}",
+            "anotar gasto de {monto} {moneda}"
+          ]
+        },
+
+        {
+          "name": "RegistrarIngresoIntent",
+          "slots": [
+            {
+              "name": "monto",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "moneda",
+              "type": "TIPO_MONEDA"
+            },
+            {
+              "name": "descripcion",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "conseguí un cliente por {monto} {moneda}",
+            "consegui un cliente por {monto} {moneda}",
+            "cerré un cliente por {monto} {moneda}",
+            "conseguí un proyecto por {monto} {moneda}",
+            "ingresaron {monto} {moneda}",
+            "cobré {monto} {moneda}",
+            "registrar ingreso de {monto} {moneda}",
+            "anotar ingreso de {monto} {moneda}",
+            "me pagaron {monto} {moneda}"
+          ]
+        }
+      ],
+
+      "types": [
+        {
+          "name": "TIPO_MONEDA",
+          "values": [
+            { "name": { "value": "pesos", "synonyms": ["peso", "pesos argentinos"] } },
+            { "name": { "value": "dólares", "synonyms": ["dolar", "dolares", "dólares", "usd"] } },
+            { "name": { "value": "euros", "synonyms": ["euro"] } }
+          ]
+        }
+      ]
+    }
+  }
+}
