@@ -1,30 +1,22 @@
+require('dotenv').config();
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 const cors = require('cors');
+const {
+  initDB,
+  getEvents, getEventsByDate, getAllEvents, insertEvent,
+  getProjects, getProjectByName, createProject, updateProject, deleteProject,
+} = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data.json');
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
 // ─────────────────────────────────────────────
-// Persistencia
+// Helpers
 // ─────────────────────────────────────────────
-
-function readData() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ events: [] }, null, 2));
-  }
-  return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-}
-
-function writeData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
 
 function hoyAR() {
   return new Date().toLocaleDateString('es-AR', {
@@ -32,47 +24,81 @@ function hoyAR() {
   });
 }
 
+function ayerAR() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toLocaleDateString('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+  });
+}
+
+// Wrapper para manejar errores en handlers async (Express 4)
+function asyncHandler(fn) {
+  return (req, res, next) => fn(req, res, next).catch(next);
+}
+
 // ─────────────────────────────────────────────
 // Webhook — recibe eventos del Alexa skill
 // ─────────────────────────────────────────────
 
-app.post('/webhook', (req, res) => {
+app.post('/webhook', asyncHandler(async (req, res) => {
   const payload = req.body;
   if (!payload || !payload.categoria) {
     return res.status(400).json({ error: 'Payload inválido' });
   }
 
-  const data = readData();
-  const event = { ...payload, receivedAt: new Date().toISOString() };
-  data.events.push(event);
-  writeData(data);
-
+  const event = await insertEvent({ ...payload, receivedAt: new Date().toISOString() });
   console.log(`[webhook] ${event.categoria}/${event.accion} — ${event.fecha} ${event.hora}`);
+
+  // Procesar eventos de proyecto automáticamente
+  if (payload.categoria === 'proyecto' && payload.descripcion) {
+    const project = await getProjectByName(payload.descripcion);
+    if (project) {
+      const fields = {};
+      if (payload.accion === 'progreso' && payload.monto != null) {
+        fields.progreso = Math.min(100, Math.max(0, Math.round(Number(payload.monto))));
+        if (fields.progreso === 100) fields.estado = 'completado';
+      } else if (payload.accion === 'completado') {
+        fields.estado = 'completado';
+        fields.progreso = 100;
+      } else if (payload.accion === 'pausado') {
+        fields.estado = 'pausado';
+      } else if (payload.accion === 'reanudar') {
+        fields.estado = 'activo';
+      }
+      if (Object.keys(fields).length) {
+        await updateProject(project.id, fields);
+        console.log(`[proyecto] ${project.nombre} → ${JSON.stringify(fields)}`);
+      }
+    }
+  }
+
   res.json({ ok: true, event });
-});
+}));
 
 // ─────────────────────────────────────────────
 // API — resumen del día
 // ─────────────────────────────────────────────
 
-app.get('/api/today', (req, res) => {
-  const data = readData();
+app.get('/api/today', asyncHandler(async (req, res) => {
   const hoy = hoyAR();
+  const ayer = ayerAR();
 
-  const todayEvents = data.events.filter((e) => e.fecha === hoy);
-  const allEvents = [...data.events].sort((a, b) => new Date(a.iso) - new Date(b.iso));
+  const [todayEvents, yesterdayEvents] = await Promise.all([
+    getEventsByDate(hoy),
+    getEventsByDate(ayer),
+  ]);
+
+  // allEvents para cálculo de sueño cross-day (dormir ayer, despertar hoy)
+  const allEvents = [...yesterdayEvents, ...todayEvents].sort(
+    (a, b) => new Date(a.iso) - new Date(b.iso)
+  );
+
+  // ── Trabajo (antes de habitos para usar activo) ──────────────────────────────
+  const trabajoData = procesarTrabajoDia(todayEvents, true, allEvents);
 
   // ── Hábitos ──────────────────────────────────
   const habitos = {
-    sueno: {
-      completado: todayEvents.some(
-        (e) => e.categoria === 'sueno' && e.accion === 'despertar'
-      ),
-      dormirse: todayEvents.find((e) => e.categoria === 'sueno' && e.accion === 'dormir'),
-      despertarse: todayEvents.find(
-        (e) => e.categoria === 'sueno' && e.accion === 'despertar'
-      ),
-    },
     lectura: {
       completado: todayEvents.some(
         (e) => e.categoria === 'lectura' && e.accion === 'fin'
@@ -81,16 +107,9 @@ app.get('/api/today', (req, res) => {
         .length,
     },
     trabajo: {
-      completado: todayEvents.some((e) => e.categoria === 'trabajo'),
-      activo:
-        todayEvents.filter((e) => e.categoria === 'trabajo').length > 0 &&
-        (() => {
-          const evs = todayEvents
-            .filter((e) => e.categoria === 'trabajo')
-            .sort((a, b) => new Date(a.iso) - new Date(b.iso));
-          const last = evs[evs.length - 1];
-          return last && (last.accion === 'inicio' || last.accion === 'reanudar');
-        })(),
+      // Usa trabajoData para detectar sesiones que empezaron ayer noche
+      completado: trabajoData.sesiones.length > 0 || trabajoData.activo,
+      activo: trabajoData.activo,
     },
     entrenamiento: {
       completado: todayEvents.some(
@@ -130,13 +149,9 @@ app.get('/api/today', (req, res) => {
       minutos: minutos % 60,
       dormirse: dormirEvent.hora,
       despertarse: despertarEvent.hora,
-      eficiencia: Math.min(100, Math.round((minutos / 480) * 100)), // 8h = 100%
+      eficiencia: Math.min(100, Math.round((minutos / 480) * 100)),
     };
   }
-
-  // ── Trabajo ──────────────────────────────────
-  const trabajoData = procesarTrabajoDia(todayEvents, true);
-  const totalWorkMinutes = trabajoData.minutos;
 
   // ── Finanzas ─────────────────────────────────
   const gastos = todayEvents
@@ -165,7 +180,6 @@ app.get('/api/today', (req, res) => {
     .filter((e) => e.moneda.toLowerCase().includes('peso') || e.moneda.toLowerCase() === 'ars')
     .reduce((sum, e) => sum + (e.monto || 0), 0);
 
-  // ── Respuesta ─────────────────────────────────
   res.json({
     fecha: hoy,
     habitos,
@@ -179,39 +193,45 @@ app.get('/api/today', (req, res) => {
     },
     eventos: todayEvents.slice(-30),
   });
-});
+}));
 
 // ─────────────────────────────────────────────
 // API — últimos eventos (feed de actividad)
 // ─────────────────────────────────────────────
 
-app.get('/api/events', (req, res) => {
-  const data = readData();
+app.get('/api/events', asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 20;
-  const events = [...data.events].reverse().slice(0, limit);
+  const events = await getEvents(limit);
   res.json(events);
-});
+}));
 
 // ─────────────────────────────────────────────
 // Helpers — procesamiento por día (reutilizable)
 // ─────────────────────────────────────────────
 
-function procesarTrabajoDia(dayEvents, esHoy = false) {
+// contextEvents: array opcional con eventos de días vecinos para detectar sesiones cross-midnight
+function procesarTrabajoDia(dayEvents, esHoy = false, contextEvents = null) {
+  const targetFechas = new Set(dayEvents.map((e) => e.fecha));
+  const context = contextEvents || dayEvents;
+
+  const eventos = context
+    .filter((e) => e.categoria === 'trabajo')
+    .sort((a, b) => new Date(a.iso) - new Date(b.iso));
+
   let totalMinutes = 0;
   let workStart = null;
   const sesiones = [];
 
-  const eventos = dayEvents
-    .filter((e) => e.categoria === 'trabajo')
-    .sort((a, b) => new Date(a.iso) - new Date(b.iso));
-
   for (const ev of eventos) {
     if (ev.accion === 'inicio' || ev.accion === 'reanudar') {
-      workStart = { hora: ev.hora, iso: ev.iso };
+      workStart = { hora: ev.hora, iso: ev.iso, fecha: ev.fecha };
     } else if ((ev.accion === 'pausa' || ev.accion === 'fin') && workStart) {
       const mins = Math.round((new Date(ev.iso) - new Date(workStart.iso)) / 60000);
-      sesiones.push({ inicio: workStart.hora, fin: ev.hora, minutos: mins, activa: false });
-      totalMinutes += mins;
+      // La sesión pertenece a este día si alguno de sus extremos cae en él
+      if (targetFechas.has(ev.fecha) || targetFechas.has(workStart.fecha)) {
+        sesiones.push({ inicio: workStart.hora, fin: ev.hora, minutos: mins, activa: false });
+        totalMinutes += mins;
+      }
       workStart = null;
     }
   }
@@ -265,10 +285,11 @@ function procesarSuenoDia(dayEvents, allEvents) {
 // API — historial (últimos N días)
 // ─────────────────────────────────────────────
 
-app.get('/api/history', (req, res) => {
-  const data = readData();
-  const days = Math.min(parseInt(req.query.days) || 7, 30);
+app.get('/api/history', asyncHandler(async (req, res) => {
+  const days = Math.min(parseInt(req.query.days) || 7, 90);
   const result = [];
+
+  const allEvents = await getAllEvents();
 
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date();
@@ -280,11 +301,10 @@ app.get('/api/history', (req, res) => {
       .toLocaleDateString('es-AR', { weekday: 'short', timeZone: 'America/Argentina/Buenos_Aires' })
       .replace('.', '');
 
-    const dayEvents = data.events.filter((e) => e.fecha === fechaStr);
-    const trabajo = procesarTrabajoDia(dayEvents, i === 0);
-    const sueno = procesarSuenoDia(dayEvents, data.events);
+    const dayEvents = allEvents.filter((e) => e.fecha === fechaStr);
+    const trabajo = procesarTrabajoDia(dayEvents, i === 0, allEvents);
+    const sueno = procesarSuenoDia(dayEvents, allEvents);
     const habitos = {
-      sueno: dayEvents.some((e) => e.categoria === 'sueno' && e.accion === 'despertar'),
       lectura: dayEvents.some((e) => e.categoria === 'lectura' && e.accion === 'fin'),
       trabajo: dayEvents.some((e) => e.categoria === 'trabajo'),
       entrenamiento: dayEvents.some(
@@ -335,17 +355,16 @@ app.get('/api/history', (req, res) => {
   }
 
   res.json(result);
-});
+}));
 
 // ─────────────────────────────────────────────
 // API — rachas (streaks) por hábito
 // ─────────────────────────────────────────────
 
-app.get('/api/streaks', (req, res) => {
-  const data = readData();
+app.get('/api/streaks', asyncHandler(async (req, res) => {
   const MAX_DAYS = 90;
+  const allEvents = await getAllEvents();
 
-  // Para cada día, determinar si cada hábito fue completado
   const days = [];
   for (let i = 0; i < MAX_DAYS; i++) {
     const date = new Date();
@@ -353,22 +372,19 @@ app.get('/api/streaks', (req, res) => {
     const fechaStr = date.toLocaleDateString('es-AR', {
       timeZone: 'America/Argentina/Buenos_Aires',
     });
-    const evs = data.events.filter((e) => e.fecha === fechaStr);
+    const evs = allEvents.filter((e) => e.fecha === fechaStr);
 
     days.push({
       fecha: fechaStr,
-      sueno:         evs.some((e) => e.categoria === 'sueno'         && e.accion === 'despertar'),
       lectura:       evs.some((e) => e.categoria === 'lectura'       && e.accion === 'fin'),
       trabajo:       evs.some((e) => e.categoria === 'trabajo'),
       entrenamiento: evs.some((e) => e.categoria === 'entrenamiento' && e.accion === 'fin'),
     });
   }
 
-  // Calcular racha: días consecutivos hacia atrás desde hoy
-  // Si hoy no está completado, la racha activa arranca desde ayer
   function calcStreak(habit) {
     let streak = 0;
-    const start = days[0][habit] ? 0 : 1; // si hoy está, contar desde hoy
+    const start = days[0][habit] ? 0 : 1;
     for (let i = start; i < days.length; i++) {
       if (days[i][habit]) streak++;
       else break;
@@ -377,19 +393,22 @@ app.get('/api/streaks', (req, res) => {
   }
 
   res.json({
-    sueno:         calcStreak('sueno'),
     lectura:       calcStreak('lectura'),
     trabajo:       calcStreak('trabajo'),
     entrenamiento: calcStreak('entrenamiento'),
   });
-});
+}));
 
 // ─────────────────────────────────────────────
 // API — agregar evento manual (para testing)
 // ─────────────────────────────────────────────
 
-app.post('/api/test-event', (req, res) => {
+app.post('/api/test-event', asyncHandler(async (req, res) => {
   const { categoria, accion, ...extra } = req.body;
+  if (!categoria || !accion) {
+    return res.status(400).json({ error: 'categoria y accion son requeridos' });
+  }
+
   const now = new Date();
   const fechaAR = now.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
   const horaAR = now.toLocaleTimeString('es-AR', {
@@ -408,19 +427,78 @@ app.post('/api/test-event', (req, res) => {
     receivedAt: now.toISOString(),
   };
 
-  const data = readData();
-  data.events.push(payload);
-  writeData(data);
-
+  const event = await insertEvent(payload);
   console.log(`[test] ${categoria}/${accion}`);
-  res.json({ ok: true, event: payload });
+  res.json({ ok: true, event });
+}));
+
+// ─────────────────────────────────────────────
+// API — proyectos
+// ─────────────────────────────────────────────
+
+app.get('/api/projects', asyncHandler(async (req, res) => {
+  const { estado } = req.query;
+  const projects = await getProjects(estado ? { estado } : {});
+  res.json(projects);
+}));
+
+app.post('/api/projects', asyncHandler(async (req, res) => {
+  const { nombre, descripcion, color } = req.body;
+  if (!nombre?.trim()) {
+    return res.status(400).json({ error: 'nombre es requerido' });
+  }
+  const project = await createProject({ nombre: nombre.trim(), descripcion, color });
+  console.log(`[proyecto] Creado: ${project.nombre}`);
+  res.json({ ok: true, project });
+}));
+
+app.patch('/api/projects/:id', asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (!Number.isFinite(id)) {
+    return res.status(400).json({ error: 'id inválido' });
+  }
+  const { progreso, estado, descripcion, nombre, color } = req.body;
+  const project = await updateProject(id, { progreso, estado, descripcion, nombre, color });
+  if (!project) {
+    return res.status(404).json({ error: 'Proyecto no encontrado' });
+  }
+  console.log(`[proyecto] Actualizado #${id}: ${JSON.stringify({ progreso, estado })}`);
+  res.json({ ok: true, project });
+}));
+
+app.delete('/api/projects/:id', asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (!Number.isFinite(id)) {
+    return res.status(400).json({ error: 'id inválido' });
+  }
+  const deleted = await deleteProject(id);
+  if (!deleted) return res.status(404).json({ error: 'Proyecto no encontrado' });
+  console.log(`[proyecto] Eliminado #${id}`);
+  res.json({ ok: true });
+}));
+
+// ─────────────────────────────────────────────
+// Error handler global
+// ─────────────────────────────────────────────
+
+app.use((err, req, res, next) => {
+  console.error('[error]', err.message);
+  res.status(500).json({ error: 'Error interno del servidor' });
 });
 
 // ─────────────────────────────────────────────
 // Start
 // ─────────────────────────────────────────────
 
-app.listen(PORT, () => {
-  console.log(`\n🟢 Dashboard corriendo en http://localhost:${PORT}`);
-  console.log(`📡 Webhook endpoint: POST http://localhost:${PORT}/webhook\n`);
+async function main() {
+  await initDB();
+  app.listen(PORT, () => {
+    console.log(`\n🟢 Dashboard corriendo en http://localhost:${PORT}`);
+    console.log(`📡 Webhook endpoint: POST http://localhost:${PORT}/webhook\n`);
+  });
+}
+
+main().catch((err) => {
+  console.error('[fatal] No se pudo iniciar el servidor:', err);
+  process.exit(1);
 });
